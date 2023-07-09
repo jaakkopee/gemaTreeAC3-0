@@ -1,15 +1,23 @@
 <html>
     <head>
-        <title>Home</title>
+        <title>GemaTreeAC 3=0 gematria calculator</title>
         <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
         <script defer src="https://pyscript.net/latest/pyscript.js"></script>
         <meta charset="utf-8">
         <meta name="description" content="Gematria and Numerology Based Word Classification Algorithm">
  
         <style>
+            .sexyBody{
+                background-color: #660d37;
+                color: #b97b00;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 20px;
+                text-align: center;
+            }
             .treeArea{
                 color: #7999f3;
                 background-color: #72166d;
+                font-family:'Courier New', Courier, monospace;
                 text-align: center;
             }
             .numberInTree{
@@ -84,7 +92,7 @@
             
         </style>
     </head>
-    <body>
+    <body class="sexyBody">
         <div class="treeArea">
             <div id="gematreeac"></div>
             <input class = "wordIO" id="wordInput"></input>
@@ -92,7 +100,6 @@
             <button id="addWordsToSM">Add Words to Tree</button>
             <div class = "tree" id="tree"></div>
             <div id="sentence" class="sent"></div>
-
         </div>
         <py-config>
             [[fetch]]
@@ -148,9 +155,9 @@
             def rgbCallBack01():
                 global gemCount
 
-                red=randint(0,255)
-                green=randint(0,255)
-                blue=randint(0,255)
+                red=randint(64,255)
+                green=randint(64,255)
+                blue=randint(64,255)
                 gemCount.style.color = f"rgb({red}, {green}, {blue})"
                 
                 red=randint(64, 100)
