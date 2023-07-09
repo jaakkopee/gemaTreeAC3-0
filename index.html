@@ -10,6 +10,7 @@
             .treeArea{
                 color: #7999f3;
                 background-color: #72166d;
+                text-align: center;
             }
             .numberInTree{
                 color: #160651;
@@ -26,14 +27,15 @@
             }
 
             .numberInTreeActive{
-                color: #160651;
-                background-color: #00ff51;
+                color: #b9a6ff;
+                background-color: #346d1d;
             }
 
             .numberInTreeInactive{
                 color: #160651;
                 background-color: #9aaf25;
             }
+
             .wordies{
                 color: #00ff51;
                 background-color: #72166d;
@@ -41,46 +43,57 @@
             .sent{
                 color: #1c7538;
                 background-color: #1f4237;
-                font-size: x-large;
+                font-size: 20px;
                 margin-left: 15px;
                 margin-right: 15px;
+                text-align: justify;
  
             }
             .sentGV{
                 color: #eff83a;
                 background-color: #235f23;
-                font-size: small;
+                font-size: 15px;
             }
+
             .gvalue{
                 color: #330c65;
                 background-color: #40b8eb;
-                font-size: xx-large;
+                font-size: 28px;
                 margin-left: 15px;
                 margin-right: 15px;
             }
+            .gvCounter{
+                color: #fffb00;
+                background-color: #ff7b00;
+                font-size: 56px;
+                text-align: center;
+                transition: all 0.660s ease;
+            }
+            .wordIO{
+                color: #08553c;
+                background-color: #3c0027;
+                font-size: 20px;
+            }
+            .tree{
+                color: #00ff51;
+                background-color: #560e53;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 20px;
+                text-align: left;
+            }
+            
         </style>
     </head>
     <body>
         <div class="treeArea">
             <div id="gematreeac"></div>
-            <div id="tree"></div>
+            <input class = "wordIO" id="wordInput"></input>
+            <div class = "gvCounter" id="gvc"></div>
+            <button id="addWordsToSM">Add Words to Tree</button>
+            <div class = "tree" id="tree"></div>
             <div id="sentence" class="sent"></div>
-            <input id="wordInput"></input>
-            <button id="addWordsToSM">Add Words to SM</button>
-            <div id="info"></div>
+
         </div>
-        
-        <!--py-script>
-            import micropip
-
-            import asyncio
-
-            async def instmp():
-                await micropip.install("sqlite3")
-
-            asyncio.ensure_future(instmp())
-        </py-script-->
-
         <py-config>
             [[fetch]]
             files = ["./NineRootedTreeColourPrint.py", "./gematriac.db", "./gemNumFuncs.py", "./ndigitsets3.py", "alphabet.py", "./getwordsfromdbs.py"]
@@ -105,7 +118,50 @@
             userEntries = []
 
             gtac = document.getElementById("gematreeac")
-            gtac.innerHTML = '<img src="./loading.jpeg" height ="200" width="1000"></img>'
+            gtac.innerHTML = '<center><img src="./loading.jpeg" height ="350" width="1240"></img></center>'
+            
+            wordInput = document.getElementById("wordInput")
+            gemCount = document.getElementById("gvc")
+            
+            def addToCounter(event):
+                global wordInput, gemCount
+                words = document.getElementById("wordInput").value.split()
+                words = [i.lower() for i in words]
+                for i in range(len(words)):
+                    for j in words[i]:                
+                        if j not in "abcdefghijklmnopqrstuvwxyzåäö":
+                            words[i]=words[i].replace(j, "")
+
+                gemCount.innerHTML = "<span>"
+                for w in words[:-1]:
+                    gemCount.innerHTML += str(getGematria(w, "ScaExt"))+" + "
+                gemCount.innerHTML += str(getGematria(words[-1], "ScaExt"))                
+                gemCount.innerHTML += " = "
+                gemCount.innerHTML += str(getGematria("".join(words), "ScaExt"))+"</span>"
+                return
+
+            wordInput.addEventListener("change", create_proxy(addToCounter))
+
+            from js import setInterval
+            from random import randint
+
+            def rgbCallBack01():
+                global gemCount
+
+                red=randint(0,255)
+                green=randint(0,255)
+                blue=randint(0,255)
+                gemCount.style.color = f"rgb({red}, {green}, {blue})"
+                
+                red=randint(64, 100)
+                green=randint(64,100)
+                blue=randint(64,100)
+                gemCount.style.backgroundColor = f"rgb({red}, {green}, {blue})"
+                
+                return
+
+            setInterval(create_proxy(rgbCallBack01), 600)
+
 
             def clickNumber(event):
                 treeDIV = document.getElementById("tree")
@@ -190,7 +246,12 @@
                 treeDIV.innerHTML=""
                 words = document.getElementById("wordInput").value.split()
                 words = [i.lower() for i in words]
-                for w in words:
+                for i in range(len(words)):
+                    for j in words[i]:                
+                        if j not in "abcdefghijklmnopqrstuvwxyzåäö":
+                            words[i]=words[i].replace(j, "")
+
+                for w in words: 
                     sm_tree.addWord(w, "ScaExt")
                     userEntries += [w]
 
@@ -206,8 +267,8 @@
                         numberELOpen[i] = False          
                 return
 
-            wordInput = document.getElementById("addWordsToSM")
-            wordInput.addEventListener("click", create_proxy(addWordsToSM))
+            wordSubmit = document.getElementById("addWordsToSM")
+            wordSubmit.addEventListener("click", create_proxy(addWordsToSM))
             sylTree = NineRootedTree(gwdb.getDeepMemSyllables(), "ScaExt")
 
         </py-script>
