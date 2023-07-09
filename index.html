@@ -1,0 +1,156 @@
+<html>
+    <head>
+        <title>Home</title>
+        <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+        <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+        <meta charset="utf-8">
+        <meta name="description" content="Gematria and Numerology Based Word Classification Algorithm">
+ 
+        <style>
+            .treeArea{
+                color: #7999f3;
+                background-color: #72166d;
+            }
+            .numberInTree{
+                color: #160651;
+                background-color: #8926dd;
+            }
+            .wordInTree{
+                color: #00ff51;
+                background-color:#72166d;
+            }
+
+            .wordInTree_UE{
+                color:#940d0d;
+                background-color:#1a5da9;
+            }
+
+            .numberInTreeActive{
+                color: #160651;
+                background-color: #00ff51;
+            }
+
+            .numberInTreeInactive{
+                color: #160651;
+                background-color: #9aaf25;
+            }
+            .wordies{
+                color: #00ff51;
+                background-color: #72166d;
+            }
+
+        </style>
+    </head>
+    <body>
+        <div class="treeArea">
+            <div id="gematreeac"></div>
+            <div id="tree"></div>
+            <input id="wordInput"></input>
+            <button id="addWordsToSM">Add Words to SM</button>
+            <div id="sentence"></div>
+            <div id="info"></div>
+        </div>
+        
+        <!--py-script>
+            import micropip
+
+            import asyncio
+
+            async def instmp():
+                await micropip.install("sqlite3")
+
+            asyncio.ensure_future(instmp())
+        </py-script-->
+
+        <py-config>
+            [[fetch]]
+            files = ["./NineRootedTreeColourPrint.py", "./gematriac.db", "./gemNumFuncs.py", "./ndigitsets3.py", "alphabet.py", "./getwordsfromdbs.py"]
+            packages = ["sqlite3"]
+            [[interpreters]]
+            src = "https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"
+            name = "pyodide-0.21.3"
+            lang = "python"
+        </py-config>
+
+        <py-script> 
+
+            from js import document, console
+            from NineRootedTreeColourPrint import NineRootedTree
+            import getwordsfromdbs as gwdb
+            from pyodide.ffi import create_proxy
+            from gemNumFuncs import getGematria, getParentList
+
+            tree = NineRootedTree([], "ScaExt")
+            treeDIV = document.getElementById("tree")
+            
+            userEntries = []
+
+            gtac = document.getElementById("gematreeac")
+            gtac.innerHTML = '<img src="./loading.jpeg" height ="200" width="1000"></img>'
+
+            def clickNumber(event):
+                treeDIV = document.getElementById("tree")
+                numberELOpen[event.currentTarget.numero] = not numberELOpen[event.currentTarget.numero]
+
+                if numberELOpen[event.currentTarget.numero]:               
+                    for w in gwdb.searchDeepMemByNumberArray(event.currentTarget.numero, "ScaExt"):
+                        tree.addWord(w, "ScaExt")
+
+                if not numberELOpen[event.currentTarget.numero]:
+                    tree.deleteWordsByValue(event.currentTarget.numero)
+                    for w in userEntries:
+                        tree.addWord(w, "ScaExt")
+                    
+                treeDIV.innerHTML = tree.generateNestedList(userEntries)
+                createNumberELs()
+                return
+
+            numberELOpen = {}
+
+            def createNumberELsInit():
+                for number in tree.getNumbers():
+                    console.log(number)
+                    link = document.getElementById("number"+str(number))
+                    link.addEventListener("click", create_proxy(clickNumber))
+                    link.numero = number
+                    numberELOpen[number] = False
+                return
+            
+            createNumberELsInit()
+
+            def createNumberELs():
+
+                for number in tree.getNumbers():
+                    link = document.getElementById("number"+str(number))
+                    link.addEventListener("click", create_proxy(clickNumber))
+                    link.numero = number                
+
+                return
+
+
+            def addWordsToSM(event):
+                console.log("awtsm")
+                global userEntries
+                treeDIV = document.getElementById("tree")
+                treeDIV.innerHTML=""
+                words = document.getElementById("wordInput").value.split()
+                words = [i.lower() for i in words]
+                for w in words:
+                    tree.addWord(w, "ScaExt")
+                    userEntries += [w]
+
+                treeDIV.innerHTML=tree.generateNestedList(userEntries)
+                createNumberELs()  
+                for newWord in words:
+                    route = getParentList(getGematria(newWord, "ScaExt"))
+                    route.reverse()
+                    for i in route:
+                        numberELOpen[i] = False          
+                return
+
+
+            wordInput = document.getElementById("addWordsToSM")
+            wordInput.addEventListener("click", create_proxy(addWordsToSM))
+        </py-script>
+    </body>
+</html>
