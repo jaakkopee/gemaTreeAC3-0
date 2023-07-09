@@ -104,23 +104,26 @@
             <div class = "tree" id="tree"></div>
             <div id="sentence" class="sent"></div>
         </div>
+
         <py-config>
-            [[fetch]]
-            files = ["./NineRootedTreeColourPrint.py", "./gematriac.db", "./gemNumFuncs.py", "./ndigitsets3.py", "alphabet.py", "./getwordsfromdbs.py"]
-            packages = ["sqlite3"]
             [[interpreters]]
             src = "https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"
             name = "pyodide-0.21.3"
             lang = "python"
+
+            packages = ["sqlite3"]
+            [[fetch]]
+            files = ["./hyphenate_finnish.py", "./NineRootedTreeColourPrint.py", "./gemNumFuncs.py", "./getwordsfromdbs.py", "./alphabet.py"]
         </py-config>
 
-        <py-script> 
+        <py-script>
 
             from js import document, console
             from NineRootedTreeColourPrint import NineRootedTree
             import getwordsfromdbs as gwdb
             from pyodide.ffi import create_proxy
             from gemNumFuncs import getGematria, getParentList
+            from hyphenate_finnish import hyphenate
 
             sm_tree = NineRootedTree([], "ScaExt")
             treeDIV = document.getElementById("tree")
@@ -213,42 +216,6 @@
                 return
 
 
-            sentence = []
-
-            def clickWord(event):
-                global sentence
-                sentence += [event.currentTarget.word]
-                sentDIV = document.getElementById("sentence")
-                sentDIV.innerHTML = ""
-                modulo = 0
-                for w in sentence:
-                    modulo += 1
-                    newDiv = document.createElement("span")
-                    newDiv.innerHTML = w
-                    newDiv.className = "sent"
-                    sentDIV.appendChild(newDiv)
-                    newDiv2 = document.createElement("span")
-                    newDiv2.innerHTML = str(getGematria(w, "ScaExt"))
-                    newDiv2.className = "sentGV"
-                    sentDIV.appendChild(newDiv2)
-                    if modulo % 5 == 0:
-                        sentDIV.innerHTML += "<br>"
-                newDiv3=document.createElement("span")
-                newDiv3.innerHTML = str(getGematria(" ".join(sentence), "ScaExt"))
-                newDiv3.className = "gvalue"
-                sentDIV.appendChild(newDiv3)
-
-                return                                
-
-            def createWordELs():
-                for word in sm_tree.getWords():
-                    link = document.getElementById("WORD"+word)
-                    link.addEventListener("click", create_proxy(clickWord))
-                    link.word = word
-                return
-
-            createWordELs()
-
             def addWordsToSM(event):
                 console.log("awtsm")
                 global userEntries
@@ -279,8 +246,136 @@
 
             wordSubmit = document.getElementById("addWordsToSM")
             wordSubmit.addEventListener("click", create_proxy(addWordsToSM))
-            sylTree = NineRootedTree(gwdb.getDeepMemSyllables(), "ScaExt")
 
+            sentence = []
+
+            def createSyllableTree():
+                words = gwdb.getDeepMem()
+                sylTree = NineRootedTree([], "ScaExt")
+                for w in words:
+                    syls = hyphenate(w)
+                    for s in syls:
+                        sylTree.addWord(s, "ScaExt")
+                return sylTree
+
+            def tokenizeSentence():
+                global sentence
+                words = sentence
+                words = [i.lower() for i in words]
+                for i in range(len(words)):
+                    for j in words[i]:                
+                        if j not in "abcdefghijklmnopqrstuvwxyzåäö":
+                            words[i]=words[i].replace(j, "")
+                sentenceSyllables = []
+                for word in words:
+                    sentenceSyllables += [hyphenate(word)]
+                return sentenceSyllables
+
+            def decorate(syllable):
+                retval = document.createElement("span")
+                retval.id="SYL"+syllable
+                return retval
+
+            def decorateOPTSYL(syllable):
+                retval = document.createElement("span")
+                retval.id="OPTSYL"+syllable
+                return retval
+
+            def clickWord(event):
+                global sentence, sylTree
+                modulo = 0
+                sentenceSyllables = tokenizeSentence()
+                sentDIV=document.getElementById("sentence")
+
+                for word in sentenceSyllables:
+
+                    modulo += 1
+                    wordSpan = document.createElement("span")
+                    [wordsSpan.appendChild(decorate(syl)) for syl in word]
+                    wordSpan.className = "sent"
+                    sentDIV.appendChild(wordSpan)
+
+                    #create event listeners for syllables
+                    for syllable in word:
+                        link = document.getElementById("SYL"+syllable)
+                        link.addEventListener("click", create_proxy(clickSyllable))
+                        link.syllable = s
+                    
+                    newDiv2 = document.createElement("span")
+                    newDiv2.innerHTML = str(getGematria(word, "ScaExt"))
+                    newDiv2.className = "sentGV"
+                    sentDIV.appendChild(newDiv2)
+                    if modulo % 5 == 0:
+                        sentDIV.innerHTML += "<br>"
+                newDiv3=document.createElement("span")
+                newDiv3.innerHTML = str(getGematria(" ".join(sentence), "ScaExt"))
+                newDiv3.className = "gvalue"
+                sentDIV.appendChild(newDiv3)
+
+                return        
+
+            def createWordELs():
+                for word in sm_tree.getWords():
+                    link = document.getElementById("WORD"+word)
+                    link.addEventListener("click", create_proxy(clickWord))
+                    link.word = word
+                return
+    
+            createWordELs()
+
+            def clickSyllable(event):
+                global sentence, sylTree
+                sylOptions = document.createElement("div")
+                sylOptions.className = "wordies"
+                
+                document.getElementById("sentence").appendChild(sylOptions)
+                sylOptions.innerHTML = "<span>Syllable Options</span><br>"
+                
+                sylSpan = document.createElement("span")
+                sylSpan.id = "optionalSyllables"
+
+                sylOptions.appendChild(sylSpan)
+
+                sylClose = document.createElement("span")
+                sylClose.id = "sylOptionsClose"
+                sylClose.innerHTML = "X"
+                sylClose.addEventListener("click", create_proxy(clickSylOptionsClose))
+                sylOptions.appendChild(sylClose)
+
+                for word in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
+                    sylSpan.appendChild(decorateOPTSYL(word))
+
+                sylOptions.style.position = "absolute"
+                sylOptions.style.top = str(event.clientY)+"px"
+                document.body.appendChild(sylOptions)
+                #create event listeners for optionalSyllables
+                for s in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
+                    link = document.getElementById("OPTSYL"+s)
+                    link.addEventListener("click", create_proxy(clickOptionalSyllable))
+                    link.syllable = s
+                return
+    
+            def clickOptionalSyllable(event):
+                sentDIV = document.getElementById("sentence")
+                sentDIV.innerHTML = ""
+                global sentence
+                for word in sentence:
+                    wordSyllables = hyphenate(word)
+                    oldWord = word.copy()
+                    for s in wordSyllables:
+                        if getGematria(s, "ScaExt") == getGematria(event.currentTarget.syllable, "ScaExt"):
+                            wordSyllables[wordSyllables.index(s)] = event.currentTarget.syllable
+                    word = "".join(wordSyllables)
+                    sentence[sentence.index(oldWord)] = word
+                return
+
+            def clickSylOptionsClose(event):
+                global sentence, sylTree
+                sylOptions = document.getElementById("sylOptions")
+                sylOptions.parentNode.removeChild(sylOptions)
+                return
+
+            
         </py-script>
     </body>
 </html>
