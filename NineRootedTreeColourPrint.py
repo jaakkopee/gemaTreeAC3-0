@@ -52,6 +52,12 @@ class NineRootedTree:
         parent=next
       return
     
+    def getWords(self):
+      words=[]
+      for i in self.getNumbers():
+        words+=self.findWords(i)
+      return words
+
 
     def findWords(self, value):
       if value == 0:
@@ -143,10 +149,10 @@ class NineRootedTree:
       for w in word.words:
         lap+=1
         if w in ue:
-          result += "<button class='wordInTree_UE'>"+str(w)+"&nbsp"+"</button>"
+          result += "<button class='wordInTree_UE' id='WORD"+w+"'>"+str(w)+"&nbsp"+"</button>"
 
         if w not in ue:
-          result += "<button class='wordInTree'>"+str(w)+"&nbsp"+"</button>"
+          result += "<button class='wordInTree' id='WORD"+w+"'>"+str(w)+"&nbsp"+"</button>"
 
         if lap%5==0:
           result += "<br>"

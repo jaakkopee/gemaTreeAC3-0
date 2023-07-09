@@ -17,7 +17,7 @@
             }
             .wordInTree{
                 color: #00ff51;
-                background-color:#72166d;
+                background-color:#560e53;
             }
 
             .wordInTree_UE{
@@ -38,16 +38,35 @@
                 color: #00ff51;
                 background-color: #72166d;
             }
-
+            .sent{
+                color: #1c7538;
+                background-color: #1f4237;
+                font-size: x-large;
+                margin-left: 15px;
+                margin-right: 15px;
+ 
+            }
+            .sentGV{
+                color: #eff83a;
+                background-color: #235f23;
+                font-size: small;
+            }
+            .gvalue{
+                color: #330c65;
+                background-color: #40b8eb;
+                font-size: xx-large;
+                margin-left: 15px;
+                margin-right: 15px;
+            }
         </style>
     </head>
     <body>
         <div class="treeArea">
             <div id="gematreeac"></div>
             <div id="tree"></div>
+            <div id="sentence" class="sent"></div>
             <input id="wordInput"></input>
             <button id="addWordsToSM">Add Words to SM</button>
-            <div id="sentence"></div>
             <div id="info"></div>
         </div>
         
@@ -80,7 +99,7 @@
             from pyodide.ffi import create_proxy
             from gemNumFuncs import getGematria, getParentList
 
-            tree = NineRootedTree([], "ScaExt")
+            sm_tree = NineRootedTree([], "ScaExt")
             treeDIV = document.getElementById("tree")
             
             userEntries = []
@@ -94,22 +113,22 @@
 
                 if numberELOpen[event.currentTarget.numero]:               
                     for w in gwdb.searchDeepMemByNumberArray(event.currentTarget.numero, "ScaExt"):
-                        tree.addWord(w, "ScaExt")
+                        sm_tree.addWord(w, "ScaExt")
 
                 if not numberELOpen[event.currentTarget.numero]:
-                    tree.deleteWordsByValue(event.currentTarget.numero)
+                    sm_tree.deleteWordsByValue(event.currentTarget.numero)
                     for w in userEntries:
-                        tree.addWord(w, "ScaExt")
-                    
-                treeDIV.innerHTML = tree.generateNestedList(userEntries)
+                        sm_tree.addWord(w, "ScaExt")
+
+                treeDIV.innerHTML = sm_tree.generateNestedList(userEntries)
                 createNumberELs()
+                createWordELs()
                 return
 
             numberELOpen = {}
 
             def createNumberELsInit():
-                for number in tree.getNumbers():
-                    console.log(number)
+                for number in sm_tree.getNumbers():
                     link = document.getElementById("number"+str(number))
                     link.addEventListener("click", create_proxy(clickNumber))
                     link.numero = number
@@ -120,13 +139,49 @@
 
             def createNumberELs():
 
-                for number in tree.getNumbers():
+                for number in sm_tree.getNumbers():
                     link = document.getElementById("number"+str(number))
                     link.addEventListener("click", create_proxy(clickNumber))
                     link.numero = number                
 
                 return
 
+
+            sentence = []
+
+            def clickWord(event):
+                global sentence
+                sentence += [event.currentTarget.word]
+                sentDIV = document.getElementById("sentence")
+                sentDIV.innerHTML = ""
+                modulo = 0
+                for w in sentence:
+                    modulo += 1
+                    newDiv = document.createElement("span")
+                    newDiv.innerHTML = w
+                    newDiv.className = "sent"
+                    sentDIV.appendChild(newDiv)
+                    newDiv2 = document.createElement("span")
+                    newDiv2.innerHTML = str(getGematria(w, "ScaExt"))
+                    newDiv2.className = "sentGV"
+                    sentDIV.appendChild(newDiv2)
+                    if modulo % 5 == 0:
+                        sentDIV.innerHTML += "<br>"
+                newDiv3=document.createElement("span")
+                newDiv3.innerHTML = str(getGematria(" ".join(sentence), "ScaExt"))
+                newDiv3.className = "gvalue"
+                sentDIV.appendChild(newDiv3)
+
+                return                                
+
+            def createWordELs():
+                for word in sm_tree.getWords():
+                    link = document.getElementById("WORD"+word)
+                    link.addEventListener("click", create_proxy(clickWord))
+                    link.word = word
+                return
+
+            createWordELs()
 
             def addWordsToSM(event):
                 console.log("awtsm")
@@ -136,11 +191,14 @@
                 words = document.getElementById("wordInput").value.split()
                 words = [i.lower() for i in words]
                 for w in words:
-                    tree.addWord(w, "ScaExt")
+                    sm_tree.addWord(w, "ScaExt")
                     userEntries += [w]
 
-                treeDIV.innerHTML=tree.generateNestedList(userEntries)
+                treeDIV.innerHTML=sm_tree.generateNestedList(userEntries)
+                
                 createNumberELs()  
+                createWordELs()
+
                 for newWord in words:
                     route = getParentList(getGematria(newWord, "ScaExt"))
                     route.reverse()
@@ -148,9 +206,10 @@
                         numberELOpen[i] = False          
                 return
 
-
             wordInput = document.getElementById("addWordsToSM")
             wordInput.addEventListener("click", create_proxy(addWordsToSM))
+            sylTree = NineRootedTree(gwdb.getDeepMemSyllables(), "ScaExt")
+
         </py-script>
     </body>
 </html>
