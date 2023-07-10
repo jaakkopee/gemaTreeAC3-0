@@ -144,7 +144,84 @@
             
             wordInput = document.getElementById("wordInput")
             gemCount = document.getElementById("gvc")
-            
+
+            class SylWord:
+                def __init__(self, uniqueID, wordStr):
+                    self.uniqueID = uniqueID
+                    newSW = hyphenate(wordStr).replace("\xad", " ").split()
+                    console.log("newSW: "+str(newSW))
+                    self.sylWord = newSW
+                    console.log("sylWord: "+str(self.sylWord))
+                    return
+
+                def changeSyllable(self, index, newSyllable):
+                    self.sylWord[index] = newSyllable
+                    return
+
+                def getUniqueID(self):
+                    return self.uniqueID
+
+                def getSylWord(self):
+                    return self.sylWord
+
+                def getSylWordString(self):
+                    retval = ""
+                    for i in self.sylWord:
+                        retval += i
+                    return retval
+
+            class SentenceFarm:
+                def __init__(self):
+                    self.words = {}
+                    self.uniqueIDCounter=0
+                    self.liberatedIDs = []
+
+                def getUniqueIDCounter(self):
+                    return self.uniqueIDCounter
+
+                def getNextUniqueID(self):
+                    if self.liberatedIDs != []:
+                        ret = self.liberatedIDs[0]
+                        del self.liberatedIDs[0]
+                    else:
+                        ret = self.uniqueIDCounter
+                        self.uniqueIDCounter += 1
+
+                    return ret
+
+                def addWord(self, word):
+                    #console.log("addWord: "+word)
+                    self.words[self.getNextUniqueID()] = SylWord(self.getUniqueIDCounter(), word)
+                    #console.log("added word: "+self.words[self.getUniqueIDCounter()].getSylWordString())
+                    #console.log("wordID: "+str(self.getUniqueIDCounter()))
+                    #console.log("sylWord: "+str(self.words[self.getUniqueIDCounter()].getSylWord()))
+                    return
+                     
+                def delWord(self, uniqueID):
+                    del self.words[uniqueID]
+                    self.liberatedIDs += [uniqueID]
+
+                def getSentence2D(self):
+                    retval = []
+                    for i in self.words:
+                        retval += i.getSylWord2D()
+                    return retval
+
+                def getSentence1D(self):
+                    retval = []
+                    for i in self.words:
+                        retval += i.getSylWord()
+                    return retval
+
+                def getSentenceString(self):
+                    retval = ""
+                    for i in self.words:
+                        retval += i.getSylWordString()
+                    return retval
+
+            sentenceFarm = SentenceFarm()
+
+
             def addToCounter(event):
                 global wordInput, gemCount
                 words = document.getElementById("wordInput").value.split()
@@ -256,8 +333,6 @@
             wordSubmit = document.getElementById("addWordsToSM")
             wordSubmit.addEventListener("click", create_proxy(addWordsToSM))
 
-            sentence = []
-
             def createSyllableTree():
                 words = gwdb.getDeepMem()
                 sylTree = NineRootedTree([], "ScaExt")
@@ -286,7 +361,6 @@
                     console.log(str(sentenceSyllables))
                     console.log(str(word))
                 return sentenceSyllables
-
             
             def decorate(syllable):
                 retval = document.createElement("span")
@@ -300,83 +374,6 @@
                 retval.innerHTML = syllable+"&nbsp;"
                 return retval
 
-            def clickWord(event):
-                console.log("clickWord")
-                global sentence, sylTree
-                sentence += [event.currentTarget.word]
-                modulo = 0
-                sentenceSyllables = tokenizeSentence(" ".join(sentence))
-                sentDIV=document.getElementById("sentence")
-                sentDIV.innerHTML = ""
-
-                for word in sentenceSyllables:
-
-                    modulo += 1
-                    wordSpan = document.createElement("span")
-                    [wordSpan.appendChild(decorate(syl)) for syl in word]
-                    wordSpan.className = "sent"
-                    sentDIV.appendChild(wordSpan)
-
-                    #create event listeners for syllables
-                    for syllable in word:
-                        link = document.getElementById("SYL"+syllable)
-                        link.addEventListener("click", create_proxy(clickSyllable))
-                        link.syllable = syllable
-                        link.innerHTML = syllable+"-"
-
-                    newDiv2 = document.createElement("span")
-                    newDiv2.innerHTML = str(getGematria("".join(word), "ScaExt"))
-                    newDiv2.className = "sentGV"
-                    sentDIV.appendChild(newDiv2)
-
-                    if modulo % 5 == 0:
-                        sentDIV.innerHTML += "<br/>"
-
-                newDiv3=document.createElement("span")
-                newDiv3.innerHTML = str(getGematria(" ".join(sentence), "ScaExt"))
-                newDiv3.className = "gvalue"
-                sentDIV.appendChild(newDiv3)
-
-                return        
-
-            def refreshSentence():
-                console.log("refreshSentence")
-                global sentence, sylTree
-                modulo = 0
-                sentenceSyllables = tokenizeSentence(" ".join(sentence))
-                console.log(str(sentenceSyllables))
-                sentDIV=document.getElementById("sentence")
-                sentDIV.innerHTML = ""
-
-                for word in sentenceSyllables:
-
-                    modulo += 1
-                    wordSpan = document.createElement("span")
-                    [wordSpan.appendChild(decorate(syl)) for syl in word]
-                    wordSpan.className = "sent"
-                    sentDIV.appendChild(wordSpan)
-
-                    #create event listeners for syllables
-                    for syllable in word:
-                        link = document.getElementById("SYL"+syllable)
-                        link.addEventListener("click", create_proxy(clickSyllable))
-                        link.syllable = syllable
-                        link.innerHTML = syllable+"-"
-
-                    newDiv2 = document.createElement("span")
-                    newDiv2.innerHTML = str(getGematria("".join(word), "ScaExt"))
-                    newDiv2.className = "sentGV"
-                    sentDIV.appendChild(newDiv2)
-
-                    if modulo % 5 == 0:
-                        sentDIV.innerHTML += "<br/>"
-                    
-                    newDiv3=document.createElement("span")
-                    newDiv3.innerHTML = str(getGematria(" ".join(sentence), "ScaExt"))
-                    newDiv3.className = "gvalue"
-                    sentDIV.appendChild(newDiv3)
-                    return        
-
             def createWordELs():
                 for word in sm_tree.getWords():
                     link = document.getElementById("WORD"+word)
@@ -386,18 +383,51 @@
     
             createWordELs()
 
+            def clickWord(event):
+                console.log("clickWord: "+str(event.currentTarget.word))
+                global sylTree, sentenceFarm
+                sentenceFarm.addWord(event.currentTarget.word)
+                refreshSentence()
+                return        
+
+            def refreshSentence():
+                global sylTree, sentenceFarm
+                sentDIV=document.getElementById("sentence")
+                sentDIV.innerHTML = ""
+
+                for wordID in sentenceFarm.words.keys():
+                    console.log("wordID: "+str(wordID))
+                    wordSpan = document.createElement("span")
+                    wordSpan.style.backgroundColor="#0000ff"
+                    sylCounter = 0
+                    for syllable in sentenceFarm.words[wordID].getSylWord():
+                        console.log("syllable: "+str(syllable))
+                        link = document.createElement("span")
+                        link.id = "SYL"+syllable
+                        link.addEventListener("click", create_proxy(clickSyllable))
+                        link.wordID=wordID
+                        link.syllablePosition = sylCounter
+                        link.syllable = syllable
+                        link.innerHTML = syllable
+                        link.style.color = "#00ff51"
+                        link.style.backgroundColor = "#560e53"
+                        link.style.marginLeft = "0px"
+                        link.style.marginRight = "0px"
+                        link.style.fontSize = "20px"
+                        link.style.cursor = "pointer"
+                        wordSpan.appendChild(link)
+                        sylCounter += 1
+                    
+                    sentDIV.appendChild(wordSpan)
+
+                return
+                
+
             def clickSyllable(event):
                 console.log("clickSyllable")
-                global sentence, sylTree
+                global sylTree, sentenceFarm
                 sylOptions = document.createElement("div")
                 sylOptions.className = "wordies"
-                
-                document.getElementById("sentence").appendChild(sylOptions)
-                sylOptions.innerHTML = "<span>Syllable Options</span><br>"
-                
-                for word in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
-                    sylOptions.appendChild(decorateOPTSYL(word))
-
                 sylOptions.style.position = "relative"
                 sylOptions.style.top = "-800px"
                 sylOptions.style.width = "600px"
@@ -405,6 +435,27 @@
                 sylOptions.style.backgroundColor = "#fffb00"
                 sylOptions.style.color = "#ff7b00"
                 sylOptions.id = "sylOptions"
+                document.getElementById("sentence").appendChild(sylOptions)
+
+                syllableIndex = sentenceFarm.words[event.currentTarget.wordID].getSylWord().index(event.currentTarget.syllable)
+
+                sylOptions.innerHTML = "<span>Syllable Swap</span><br>"
+                
+                for s in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
+                    link1 = document.createElement("span")
+                    link1.id = "OPTSYL"+s
+                    link1.addEventListener("click", create_proxy(clickOptionalSyllable))
+                    link1.wordID = event.currentTarget.wordID
+                    link1.syllablePosition = syllableIndex
+                    link1.syllable = s
+                    link1.innerHTML = s
+                    link1.style.color = "#00ff51"
+                    link1.style.backgroundColor = "#560e53"
+                    link1.style.marginLeft = "0px"
+                    link1.style.marginRight = "0px"
+                    link1.style.fontSize = "20px"
+                    link1.style.cursor = "pointer"
+                    sylOptions.appendChild(link1)
 
                 document.body.appendChild(sylOptions)
 
@@ -429,25 +480,23 @@
                 sylOptions.appendChild(sylClose)
     
                 return
-    
+
             def clickOptionalSyllable(event):
-                global sentence, sylTree
+                global sentenceFarm, sylTree
                 sentDIV=document.getElementById("sentence")
                 newSyl = event.currentTarget.syllable
-                oldSyls = []
-                for i in range(len(sentence)):
-                    oldSyls += [hyphenate(sentence[i]).replace("\xad", " ")]
-                    for j in range(len(oldSyls)):
-                        if oldSyls[j] == event.currentTarget.syllable:
-                            oldSyls[j] = newSyl
-                sentence = []
-                for i in range(len(oldSyls)):
-                    sentence += [oldSyls[i]]
-
+    
+                #find syllable in sentenceFarm
+                for wordID in sentenceFarm.words.keys():
+                    for syllable in sentenceFarm.words[wordID].getSylWord():
+                        if (syllable == event.currentTarget.syllable) and (sentenceFarm.words[wordID].getSylWord().index(syllable) == event.currentTarget.syllablePosition):
+                            sentenceFarm.words[wordID].changeSyllable(event.currentTarget.syllablePosition, newSyl)
+                            console.log("changed syllable: "+str(sentenceFarm.words[wordID].getSylWord()))
+                            console.log("in index: "+str(event.currentTarget.syllablePosition))
+                            break
+                
                 refreshSentence()
 
-                sylOptions = document.getElementById("sylOptions")
-                document.body.removeChild(sylOptions)
                 return
 
             def clickSylOptionsClose(event):
