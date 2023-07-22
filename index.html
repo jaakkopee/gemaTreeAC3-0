@@ -438,7 +438,7 @@
                         gematriaViewSyl.syllablePosition = sylCounter
                         gematriaViewSyl.syllable = syllable
                         #gematriaViewSyl.addEventListener("click", create_proxy(clickSyllable))
-                                  
+                        
                         wordSpan.appendChild(syllableSpan)
                         wordSpan.appendChild(gematriaViewSyl)
                         sylCounter += 1
@@ -454,6 +454,9 @@
                     #wordGematriaSpan.addEventListener("click", create_proxy(clickWord))
 
                     wordSpan.appendChild(wordGematriaSpan)
+                                  
+                    breikki = document.createElement("br")
+                    wordSpan.appendChild(breikki)
                     
                     #wordSpan.innerHTML += "<br/>"
 
@@ -475,7 +478,7 @@
 
             def clickSyllable(event):
                 global SYLSWAPISOPEN
-                
+
                 if SYLSWAPISOPEN:
                     return
 
