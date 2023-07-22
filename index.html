@@ -473,8 +473,8 @@
                     wordGematriaSpan.style.fontSize = "18px"
                     wordGematriaSpan.addEventListener("click", create_proxy(addWordsToSMFromSentence))
                     wordGematriaSpan.word = sentenceFarm.words[wordID].getSylWordString()
+                    wordGematriaSpan.style.cursor = "pointer"
                     wordSpan.appendChild(wordGematriaSpan)
-                    wordSpan.style.cursor = "pointer"
                     
                     delWord = document.createElement("span")
                     delWord.innerHTML="X"
