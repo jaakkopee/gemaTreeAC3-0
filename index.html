@@ -132,6 +132,8 @@
             from gemNumFuncs import getGematria, getParentList
             from hyphenate_finnish import hyphenate
             import sqlite3
+            import copy
+
             sm_tree = NineRootedTree([], "ScaExt")
             treeDIV = document.getElementById("tree")
             
@@ -153,7 +155,7 @@
                     return
 
                 def changeSyllable(self, index, newSyllable):
-                    self.sylWord[index] = newSyllable
+                    self.sylWord[index] = copy.copy(newSyllable)
                     return
 
                 def getUniqueID(self):
@@ -174,12 +176,20 @@
                     self.uniqueIDCounter=0
                     self.liberatedIDs = []
 
+
+                def changeSyllable(self, wordID, index, newSyllable):
+                    for i in self.words.keys():
+                        if i == wordID:
+                            self.words[i].changeSyllable(index, newSyllable)
+
+                    return
+
                 def getUniqueIDCounter(self):
                     return self.uniqueIDCounter
 
                 def getNextUniqueID(self):
                     if self.liberatedIDs != []:
-                        ret = self.liberatedIDs[0]
+                        ret = copy.copy(self.liberatedIDs[0])
                         del self.liberatedIDs[0]
                     else:
                         ret = self.uniqueIDCounter
@@ -392,7 +402,7 @@
                 global sylTree, sentenceFarm
                 sentDIV=document.getElementById("sentence")
                 sentDIV.innerHTML = ""
-                sentenceSpan=document.createElement("span")
+                sentenceDIV=sentDIV
 
                 for wordID in sentenceFarm.words.keys():
                     console.log("wordID: "+str(wordID))
@@ -404,7 +414,6 @@
                         console.log("syllable: "+str(syllable))
                         syllableSpan = document.createElement("span")
                         syllableSpan.id = "SYL"+syllable
-                        syllableSpan.addEventListener("click", create_proxy(clickSyllable))
                         syllableSpan.wordID=wordID
                         syllableSpan.syllablePosition = sylCounter
                         syllableSpan.syllable = syllable
@@ -415,7 +424,8 @@
                         syllableSpan.style.marginRight = "6px"
                         syllableSpan.style.fontSize = "22px"
                         syllableSpan.syllablePosition = sylCounter
-
+                        syllableSpan.addEventListener("click", create_proxy(clickSyllable))
+                        
                         gematriaViewSyl = document.createElement("span")
                         gematriaViewSyl.innerHTML = str(getGematria(syllable, "ScaExt"))
                         gematriaViewSyl.style.color = "#fffb00"
@@ -423,12 +433,12 @@
                         gematriaViewSyl.style.marginLeft = "6px"
                         gematriaViewSyl.style.marginRight = "6px"
                         gematriaViewSyl.style.fontSize = "16px"
-                        gematriaViewSyl.style.cursor = "pointer"
-
-                        gematriaViewSyl.addEventListener("click", create_proxy(clickSyllable))
+                        syllableSpan.style.cursor="pointer"
+                        
                         gematriaViewSyl.syllablePosition = sylCounter
                         gematriaViewSyl.syllable = syllable
-                        
+                        #gematriaViewSyl.addEventListener("click", create_proxy(clickSyllable))
+                                  
                         wordSpan.appendChild(syllableSpan)
                         wordSpan.appendChild(gematriaViewSyl)
                         sylCounter += 1
@@ -440,15 +450,14 @@
                     wordGematriaSpan.style.marginLeft = "6px"
                     wordGematriaSpan.style.marginRight = "6px"
                     wordGematriaSpan.style.fontSize = "18px"
-                    wordGematriaSpan.style.cursor = "pointer"
 
-                    wordGematriaSpan.addEventListener("click", create_proxy(clickWord))
+                    #wordGematriaSpan.addEventListener("click", create_proxy(clickWord))
 
                     wordSpan.appendChild(wordGematriaSpan)
                     
                     #wordSpan.innerHTML += "<br/>"
 
-                    sentenceSpan.appendChild(wordSpan)                
+                    sentenceDIV.appendChild(wordSpan)                
                 
                 gematriaViewSentence = document.createElement("span")
                 gematriaViewSentence.innerHTML = str(getGematria(sentenceFarm.getSentenceString(), "ScaExt"))
@@ -458,14 +467,20 @@
                 gematriaViewSentence.style.marginRight = "6px"
                 gematriaViewSentence.style.fontSize = "26px"
 
-                sentenceSpan.appendChild(gematriaViewSentence)
-                
-                sentDIV.appendChild(sentenceSpan)
+                sentenceDIV.appendChild(gematriaViewSentence)
 
                 return
 
+            SYLSWAPISOPEN=False
 
             def clickSyllable(event):
+                global SYLSWAPISOPEN
+                
+                if SYLSWAPISOPEN:
+                    return
+
+                SYLSWAPISOPEN=True
+
                 console.log("clickSyllable")
                 global sylTree, sentenceFarm
                 sylOptions = document.createElement("div")
@@ -491,8 +506,8 @@
                     
                     sylSpan2 = document.createElement("span")
                     sylSpan2.id = "OPTSYL"+s
-                    sylSpan2.addEventListener("click", create_proxy(clickOptionalSyllable))
-                    sylSpan2.wordID = event.currentTarget.wordID
+
+                    sylSpan2.wordUID = event.currentTarget.wordID
                     sylSpan2.syllablePosition = event.currentTarget.syllablePosition
                     
                     sylSpan2.syllable = s
@@ -531,10 +546,10 @@
     
                 #find syllable in sentenceFarm
                 for wordID in sentenceFarm.words.keys():
-                    for syllable in sentenceFarm.words[wordID].getSylWord():
-                        console.log("clickOptSyl, syllable: "+str(syllable))
-                        if (syllable == event.currentTarget.syllable) and (sentenceFarm.words[wordID].getSylWord().index(syllable) == event.currentTarget.syllablePosition):
-                            sentenceFarm.words[wordID].changeSyllable(event.currentTarget.syllablePosition, newSyl)
+                    for oldSyl in sentenceFarm.words[wordID].getSylWord():
+                        console.log("clickOptSyl, syllable: "+str(oldSyl))
+                        if (getGematria(str(oldSyl), "ScaExt") == getGematria(event.currentTarget.syllable, "ScaExt")) and (wordID == event.currentTarget.wordUID) and (sentenceFarm.words[wordID].getSylWord().index(str(oldSyl)) == int(event.currentTarget.syllablePosition)):
+                            sentenceFarm.changeSyllable(wordID, event.currentTarget.syllablePosition, newSyl)
                             console.log("changed syllable: "+str(sentenceFarm.words[wordID].getSylWord()))
                             console.log("in index: "+str(event.currentTarget.syllablePosition))
                             break
@@ -544,7 +559,10 @@
                 return
 
             def clickSylOptionsClose(event):
-                global sentence, sylTree
+                global sentence, sylTree, SYLSWAPISOPEN
+
+                SYLSWAPISOPEN=False
+
                 sylOptions = document.getElementById("sylOptions")
                 document.body.removeChild(sylOptions)
                 return
