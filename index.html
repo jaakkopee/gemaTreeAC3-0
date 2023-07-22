@@ -341,6 +341,29 @@
             wordSubmit = document.getElementById("addWordsToSM")
             wordSubmit.addEventListener("click", create_proxy(addWordsToSM))
 
+            def addWordsToSMFromSentence(event):
+                word = copy.copy(event.currentTarget.word)
+                console.log("awtsmFS")
+                global userEntries
+
+                treeDIV = document.getElementById("tree")
+                treeDIV.innerHTML=""
+ 
+                sm_tree.addWord(word, "ScaExt")
+                userEntries += [word]
+
+                treeDIV.innerHTML=sm_tree.generateNestedList(userEntries)
+                
+                createNumberELs()  
+                createWordELs()
+
+                route = getParentList(getGematria(word, "ScaExt"))
+                route.reverse()
+
+                for i in route:
+                    numberELOpen[i] = False          
+                return
+
             def createSyllableTree():
                 words = gwdb.getDeepMem()
                 sylTree = NineRootedTree([], "ScaExt")
@@ -450,14 +473,22 @@
                     wordGematriaSpan.style.marginLeft = "6px"
                     wordGematriaSpan.style.marginRight = "6px"
                     wordGematriaSpan.style.fontSize = "18px"
-
-                    #wordGematriaSpan.addEventListener("click", create_proxy(clickWord))
-
+                    wordGematriaSpan.addEventListener("click", create_proxy(addWordsToSMFromSentence))
+                    wordGematriaSpan.word = sentenceFarm.words[wordID].getSylWordString()
                     wordSpan.appendChild(wordGematriaSpan)
-                                  
+                    wordSpan.style.cursor = "pointer"
+                    
+                    delWord = document.createElement("span")
+                    delWord.innerHTML="X"
+                    delWord.style.cursor = "pointer"
+                    delWord.style.color="red"
+                    delWord.wordUID = wordID
+                    delWord.addEventListener("click", create_proxy(removeWordFromSentence))
+                    wordSpan.appendChild(delWord)
+
                     breikki = document.createElement("br")
                     wordSpan.appendChild(breikki)
-                    
+
                     #wordSpan.innerHTML += "<br/>"
 
                     sentenceDIV.appendChild(wordSpan)                
@@ -474,6 +505,11 @@
 
                 return
 
+            def removeWordFromSentence(event):
+                sentenceFarm.delWord(event.currentTarget.wordUID)
+                refreshSentence()
+                return
+                    
             SYLSWAPISOPEN=False
 
             def clickSyllable(event):
