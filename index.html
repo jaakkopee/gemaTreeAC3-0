@@ -10,14 +10,13 @@
             .sexyBody{
                 background-color: #660d37;
                 color: #b97b00;
-                font-family: 'Courier New', Courier, monospace;
+                font-family: 'Times New Roman', Times, serif;
                 font-size: 20px;
                 text-align: center;
             }
             .treeArea{
                 color: #7999f3;
                 background-color: #72166d;
-                font-family:'Courier New', Courier, monospace;
                 text-align: center;
             }
             .numberInTree{
@@ -97,7 +96,6 @@
             .tree{
                 color: #00ff51;
                 background-color: #560e53;
-                font-family: 'Courier New', Courier, monospace;
                 font-size: 20px;
                 text-align: left;
             }
@@ -215,7 +213,7 @@
 
                 def getSentenceString(self):
                     retval = ""
-                    for i in self.words:
+                    for i in self.words.values():
                         retval += i.getSylWordString()
                     return retval
 
@@ -394,34 +392,78 @@
                 global sylTree, sentenceFarm
                 sentDIV=document.getElementById("sentence")
                 sentDIV.innerHTML = ""
+                sentenceSpan=document.createElement("span")
 
                 for wordID in sentenceFarm.words.keys():
                     console.log("wordID: "+str(wordID))
                     wordSpan = document.createElement("span")
                     wordSpan.style.backgroundColor="#0000ff"
                     sylCounter = 0
+                       
                     for syllable in sentenceFarm.words[wordID].getSylWord():
                         console.log("syllable: "+str(syllable))
-                        link = document.createElement("span")
-                        link.id = "SYL"+syllable
-                        link.addEventListener("click", create_proxy(clickSyllable))
-                        link.wordID=wordID
-                        link.syllablePosition = sylCounter
-                        link.syllable = syllable
-                        link.innerHTML = syllable
-                        link.style.color = "#00ff51"
-                        link.style.backgroundColor = "#560e53"
-                        link.style.marginLeft = "0px"
-                        link.style.marginRight = "0px"
-                        link.style.fontSize = "20px"
-                        link.style.cursor = "pointer"
-                        wordSpan.appendChild(link)
+                        syllableSpan = document.createElement("span")
+                        syllableSpan.id = "SYL"+syllable
+                        syllableSpan.addEventListener("click", create_proxy(clickSyllable))
+                        syllableSpan.wordID=wordID
+                        syllableSpan.syllablePosition = sylCounter
+                        syllableSpan.syllable = syllable
+                        syllableSpan.innerHTML = syllable
+                        syllableSpan.style.color = "#00ff51"
+                        syllableSpan.style.backgroundColor = "#560e53"
+                        syllableSpan.style.marginLeft = "6px"
+                        syllableSpan.style.marginRight = "6px"
+                        syllableSpan.style.fontSize = "22px"
+                        syllableSpan.syllablePosition = sylCounter
+
+                        gematriaViewSyl = document.createElement("span")
+                        gematriaViewSyl.innerHTML = str(getGematria(syllable, "ScaExt"))
+                        gematriaViewSyl.style.color = "#fffb00"
+                        gematriaViewSyl.style.backgroundColor = "#ff7b00"
+                        gematriaViewSyl.style.marginLeft = "6px"
+                        gematriaViewSyl.style.marginRight = "6px"
+                        gematriaViewSyl.style.fontSize = "16px"
+                        gematriaViewSyl.style.cursor = "pointer"
+
+                        gematriaViewSyl.addEventListener("click", create_proxy(clickSyllable))
+                        gematriaViewSyl.syllablePosition = sylCounter
+                        gematriaViewSyl.syllable = syllable
+                        
+                        wordSpan.appendChild(syllableSpan)
+                        wordSpan.appendChild(gematriaViewSyl)
                         sylCounter += 1
                     
-                    sentDIV.appendChild(wordSpan)
+                    wordGematriaSpan = document.createElement("span")
+                    wordGematriaSpan.innerHTML = str(getGematria(sentenceFarm.words[wordID].getSylWordString(), "ScaExt"))
+                    wordGematriaSpan.style.color = "#002833"
+                    wordGematriaSpan.style.backgroundColor = "#668655"
+                    wordGematriaSpan.style.marginLeft = "6px"
+                    wordGematriaSpan.style.marginRight = "6px"
+                    wordGematriaSpan.style.fontSize = "18px"
+                    wordGematriaSpan.style.cursor = "pointer"
+
+                    wordGematriaSpan.addEventListener("click", create_proxy(clickWord))
+
+                    wordSpan.appendChild(wordGematriaSpan)
+                    
+                    #wordSpan.innerHTML += "<br/>"
+
+                    sentenceSpan.appendChild(wordSpan)                
+                
+                gematriaViewSentence = document.createElement("span")
+                gematriaViewSentence.innerHTML = str(getGematria(sentenceFarm.getSentenceString(), "ScaExt"))
+                gematriaViewSentence.style.color = "#000033"
+                gematriaViewSentence.style.backgroundColor = "#660055"
+                gematriaViewSentence.style.marginLeft = "6px"
+                gematriaViewSentence.style.marginRight = "6px"
+                gematriaViewSentence.style.fontSize = "26px"
+
+                sentenceSpan.appendChild(gematriaViewSentence)
+                
+                sentDIV.appendChild(sentenceSpan)
 
                 return
-                
+
 
             def clickSyllable(event):
                 console.log("clickSyllable")
@@ -434,51 +476,52 @@
                 sylOptions.style.height = "500px"
                 sylOptions.style.backgroundColor = "#fffb00"
                 sylOptions.style.color = "#ff7b00"
+                sylOptions.style.padding = "10px"
+                sylOptions.style.border = "solid"
+                sylOptions.style.borderWidth = "10px"
                 sylOptions.id = "sylOptions"
+
                 document.getElementById("sentence").appendChild(sylOptions)
 
-                syllableIndex = sentenceFarm.words[event.currentTarget.wordID].getSylWord().index(event.currentTarget.syllable)
+                syllableIndex = event.currentTarget.syllablePosition
 
                 sylOptions.innerHTML = "<span>Syllable Swap</span><br>"
-                
+                modulo=0
                 for s in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
-                    link1 = document.createElement("span")
-                    link1.id = "OPTSYL"+s
-                    link1.addEventListener("click", create_proxy(clickOptionalSyllable))
-                    link1.wordID = event.currentTarget.wordID
-                    link1.syllablePosition = syllableIndex
-                    link1.syllable = s
-                    link1.innerHTML = s
-                    link1.style.color = "#00ff51"
-                    link1.style.backgroundColor = "#560e53"
-                    link1.style.marginLeft = "0px"
-                    link1.style.marginRight = "0px"
-                    link1.style.fontSize = "20px"
-                    link1.style.cursor = "pointer"
-                    sylOptions.appendChild(link1)
+                    
+                    sylSpan2 = document.createElement("span")
+                    sylSpan2.id = "OPTSYL"+s
+                    sylSpan2.addEventListener("click", create_proxy(clickOptionalSyllable))
+                    sylSpan2.wordID = event.currentTarget.wordID
+                    sylSpan2.syllablePosition = event.currentTarget.syllablePosition
+                    
+                    sylSpan2.syllable = s
+                    if modulo % 8 == 0:
+                        sylSpan2.innerHTML = s+"<br/>"
+                    else:
+                        sylSpan2.innerHTML = s+"&nbsp;"
 
-                document.body.appendChild(sylOptions)
+                    sylSpan2.style.color = "#00ff51"
+                    sylSpan2.style.backgroundColor = "#560e53"
+                    sylSpan2.style.marginLeft = "0px"
+                    sylSpan2.style.marginRight = "0px"
+                    sylSpan2.style.fontSize = "20px"
+                    sylSpan2.style.cursor = "pointer"
+                    sylSpan2.addEventListener("click", create_proxy(clickOptionalSyllable))
 
+                    sylOptions.appendChild(sylSpan2)
+                    modulo += 1
 
-                #create event listeners for optionalSyllables
-                modIter = 0
-                for s in sylTree.findWords(getGematria(event.currentTarget.syllable, "ScaExt")):
-                    modIter += 1
-                    link1 = document.getElementById("OPTSYL"+s)
-                    link1.addEventListener("click", create_proxy(clickOptionalSyllable))
-                    link1.syllable = s
-                    if modIter % 6 == 0:
-                        sylOptions.appendChild(document.createElement("br"))
-                    link1.innerHTML = s+"&nbsp;"
-                    sylOptions.appendChild(link1)
 
                 sylClose = document.createElement("span")
                 sylClose.id = "sylOptionsClose"
                 sylClose.innerHTML = "<br/>X"
+                sylClose.style.cursor="pointer"
                 sylClose.style.color = "red"
                 sylClose.addEventListener("click", create_proxy(clickSylOptionsClose))
                 sylOptions.appendChild(sylClose)
-    
+                document.body.appendChild(sylOptions)
+
                 return
 
             def clickOptionalSyllable(event):
@@ -489,6 +532,7 @@
                 #find syllable in sentenceFarm
                 for wordID in sentenceFarm.words.keys():
                     for syllable in sentenceFarm.words[wordID].getSylWord():
+                        console.log("clickOptSyl, syllable: "+str(syllable))
                         if (syllable == event.currentTarget.syllable) and (sentenceFarm.words[wordID].getSylWord().index(syllable) == event.currentTarget.syllablePosition):
                             sentenceFarm.words[wordID].changeSyllable(event.currentTarget.syllablePosition, newSyl)
                             console.log("changed syllable: "+str(sentenceFarm.words[wordID].getSylWord()))
